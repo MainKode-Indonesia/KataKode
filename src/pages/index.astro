@@ -48,7 +48,7 @@ const latestArticles = allArticles
 				<div class="mt-9 flex flex-wrap items-center gap-4">
 					<a
 						href="/artikel/"
-						class="rounded-full bg-foreground px-7 py-3.5 text-sm font-semibold text-white hover:bg-primary"
+						class="rounded-full bg-foreground px-7 py-3.5 text-sm font-semibold text-background hover:bg-primary hover:text-white"
 					>
 						Jelajahi Artikel
 					</a>
@@ -78,27 +78,27 @@ const latestArticles = allArticles
 
 					<article class="grid overflow-hidden rounded-3xl border border-border bg-surface lg:grid-cols-2">
 						<a
-  href={`/artikel/${featuredArticle.id}/`}
-  class="group relative flex min-h-72 items-center justify-center overflow-hidden bg-[#eeedff] lg:min-h-[430px]"
-  aria-label={`Baca ${featuredArticle.title}`}
->
-  {featuredArticle.cover ? (
-    <img
-      src={featuredArticle.cover}
-      alt={featuredArticle.title}
-      class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-      loading="eager"
-      fetchpriority="high"
-    />
-  ) : (
-    <>
-      <div class="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-      <span class="relative text-8xl font-bold text-primary/25 transition-transform duration-500 group-hover:scale-110">
-        &lt;/&gt;
-      </span>
-    </>
-  )}
-</a>
+                                                        href={`/artikel/${featuredArticle.id}/`}
+                                                        class="group relative flex min-h-72 items-center justify-center overflow-hidden bg-[#eeedff] dark:bg-[#1a1830] lg:min-h-[430px]"
+                                                        aria-label={`Baca ${featuredArticle.title}`}
+                                                >
+                                                        {featuredArticle.cover ? (
+                                                                <img
+                                                                        src={featuredArticle.cover}
+                                                                        alt={featuredArticle.title}
+                                                                        class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                                        loading="eager"
+                                                                        fetchpriority="high"
+                                                                />
+                                                        ) : (
+                                                                <>
+                                                                        <div class="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
+                                                                        <span class="relative text-8xl font-bold text-primary/25 transition-transform duration-500 group-hover:scale-110">
+                                                                                &lt;/&gt;
+                                                                        </span>
+                                                                </>
+                                                        )}
+                                                </a>
 						<div class="flex flex-col justify-center p-8 md:p-12">
 							<div>
 								<CategoryBadge
@@ -204,7 +204,7 @@ const latestArticles = allArticles
 		<!-- CLOSING CTA -->
 		<section class="container-site pb-20 md:pb-28">
 			<div
-				class="overflow-hidden rounded-3xl bg-foreground px-8 py-16 text-center text-white md:px-16 md:py-20"
+				class="overflow-hidden rounded-3xl bg-zinc-900 px-8 py-16 text-center text-white dark:border dark:border-border dark:bg-surface md:px-16 md:py-20"
 			>
 				<span
 					class="text-xs font-semibold uppercase tracking-[0.2em] text-white/50"
@@ -227,7 +227,7 @@ const latestArticles = allArticles
 
 				<a
 					href="/artikel/"
-					class="mt-8 inline-flex rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-white"
+					class="mt-8 inline-flex rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-zinc-900 hover:bg-primary hover:text-white"
 				>
 					Mulai Membaca
 				</a>

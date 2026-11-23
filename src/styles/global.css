@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
     --font-sans: "Inter", sans-serif;
 
@@ -12,12 +14,26 @@
 }
 
 @layer base {
+    :root {
+        color-scheme: light;
+    }
+
+    :root.dark {
+        color-scheme: dark;
+        --color-background: #09090b;
+        --color-foreground: #fafafa;
+        --color-surface: #111114;
+        --color-primary: #817aff;
+        --color-muted: #a1a1aa;
+        --color-border: #27272a;
+    }
+
     html {
         scroll-behavior: smooth;
     }
 
     body {
-        @apply bg-background text-foreground font-sans antialiased;
+        @apply bg-background text-foreground font-sans antialiased transition-colors duration-200;
     }
 
     ::selection {
