@@ -1,0 +1,44 @@
+import { getDirectusArticles } from "./directus";
+import {
+  adaptDirectusArticle,
+  type UnifiedArticle,
+} from "./article-adapter";
+
+export async function getPublishedArticles(): Promise<UnifiedArticle[]> {
+  const articles = (await getDirectusArticles()).map(
+    adaptDirectusArticle
+  );
+
+  return articles.sort(
+    (a, b) => b.pubDate.getTime() - a.pubDate.getTime()
+  );
+}
+
+export async function getFeaturedArticle(): Promise<UnifiedArticle | undefined> {
+  const articles = await getPublishedArticles();
+
+  return articles.find((article) => article.featured);
+}
+
+export async function getLatestArticles(limit = 6): Promise<UnifiedArticle[]> {
+  const articles = await getPublishedArticles();
+
+  return articles
+    .filter((article) => !article.featured)
+    .slice(0, limit);
+}
+
+export function formatArticleDate(date: Date) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+export async function getAllPublishedArticles(): Promise<UnifiedArticle[]> {
+  return getPublishedArticles();
+}
+
+

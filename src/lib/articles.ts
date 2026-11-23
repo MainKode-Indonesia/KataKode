@@ -1,42 +1,36 @@
-
-import { getCollection } from "astro:content";
-
 import { getDirectusArticles } from "./directus";
 import {
   adaptDirectusArticle,
   type UnifiedArticle,
 } from "./article-adapter";
 
-export async function getPublishedArticles() {
-  const articles = await getCollection(
-    "articles",
-    ({ data }) => !data.draft
+export async function getPublishedArticles(): Promise<UnifiedArticle[]> {
+  const articles = (await getDirectusArticles()).map(
+    adaptDirectusArticle
   );
 
   return articles.sort(
-    (a, b) =>
-      b.data.pubDate.getTime() -
-      a.data.pubDate.getTime()
+    (a, b) => b.pubDate.getTime() - a.pubDate.getTime()
   );
 }
 
-export async function getFeaturedArticle() {
+export async function getFeaturedArticle(): Promise<UnifiedArticle | undefined> {
   const articles = await getPublishedArticles();
-
-  return articles.find(
-    (article) => article.data.featured
-  );
+  return articles[0];
 }
 
-export async function getLatestArticles(limit = 6) {
+export async function getLatestArticles(
+  limit = 6
+): Promise<UnifiedArticle[]> {
   const articles = await getPublishedArticles();
+  const featured = articles[0];
 
   return articles
-    .filter((article) => !article.data.featured)
+    .filter((article) => article.id !== featured?.id)
     .slice(0, limit);
 }
 
-export function formatArticleDate(date: Date) {
+export function formatArticleDate(date: Date): string {
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "long",
@@ -45,34 +39,6 @@ export function formatArticleDate(date: Date) {
   }).format(date);
 }
 
-export async function getAllPublishedArticles() {
-  const markdownArticles = await getPublishedArticles();
-
-  const directusArticles = (await getDirectusArticles()).map(
-    adaptDirectusArticle
-  );
-
-  // Hindari slug yang sama dari dua sumber.
-  const markdownSlugs = new Set(
-    markdownArticles.map((article) => article.id)
-  );
-
-  const uniqueDirectusArticles = directusArticles.filter(
-    (article) => !markdownSlugs.has(article.id)
-  );
-
-  const allArticles: (
-    | (typeof markdownArticles)[number]
-    | UnifiedArticle
-  )[] = [
-    ...markdownArticles,
-    ...uniqueDirectusArticles,
-  ];
-
-  return allArticles.sort((a, b) => {
-    const dateA = "data" in a ? a.data.pubDate : a.pubDate;
-    const dateB = "data" in b ? b.data.pubDate : b.pubDate;
-
-    return dateB.getTime() - dateA.getTime();
-  });
+export async function getAllPublishedArticles(): Promise<UnifiedArticle[]> {
+  return getPublishedArticles();
 }

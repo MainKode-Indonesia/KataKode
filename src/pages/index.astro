@@ -8,9 +8,10 @@ import {
     getAllPublishedArticles,
     formatArticleDate,
 } from "../lib/articles";
-import { topics } from "../data/topics";
+import { getAllTopics } from "../lib/topics";
 import TopicCard from "../components/ui/TopicCard.astro";
 const featuredArticle = await getFeaturedArticle();
+const topics = await getAllTopics();
 
 const allArticles = await getAllPublishedArticles();
 
@@ -21,7 +22,7 @@ const latestArticles = allArticles
 
 <BaseLayout
 	title="KataKode — Bercerita tentang kode"
-	description="Artikel, tutorial, dan cerita seputar teknologi, programming, Linux, dan web development."
+	description="Artikel, tutorial, dan panduan teknologi untuk menjelajahi dunia pemrograman dan pengembangan web."
 >
 	<main>
 		<!-- HERO -->
@@ -77,19 +78,31 @@ const latestArticles = allArticles
 
 					<article class="grid overflow-hidden rounded-3xl border border-border bg-surface lg:grid-cols-2">
 						<a
-							href={`/artikel/${featuredArticle.id}/`}
-							class="group relative flex min-h-72 items-center justify-center overflow-hidden bg-[#eeedff] lg:min-h-[430px]"
-							aria-label={`Baca ${featuredArticle.data.title}`}
-						>
-							<div class="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-							<span class="relative text-8xl font-bold text-primary/25 transition-transform duration-500 group-hover:scale-110">
-								&lt;/&gt;
-							</span>
-						</a>
+  href={`/artikel/${featuredArticle.id}/`}
+  class="group relative flex min-h-72 items-center justify-center overflow-hidden bg-[#eeedff] lg:min-h-[430px]"
+  aria-label={`Baca ${featuredArticle.title}`}
+>
+  {featuredArticle.cover ? (
+    <img
+      src={featuredArticle.cover}
+      alt={featuredArticle.title}
+      class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      loading="eager"
+      fetchpriority="high"
+    />
+  ) : (
+    <>
+      <div class="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
+      <span class="relative text-8xl font-bold text-primary/25 transition-transform duration-500 group-hover:scale-110">
+        &lt;/&gt;
+      </span>
+    </>
+  )}
+</a>
 						<div class="flex flex-col justify-center p-8 md:p-12">
 							<div>
 								<CategoryBadge
-									category={featuredArticle.data.category}
+									category={featuredArticle.category}
 								/>
 							</div>
 
@@ -98,29 +111,29 @@ const latestArticles = allArticles
 									href={`/artikel/${featuredArticle.id}/`}
 									class="hover:text-primary"
 								>
-									{featuredArticle.data.title}
+									{featuredArticle.title}
 								</a>
 							</h3>
 
 							<p class="mt-5 text-base leading-8 text-muted">
-								{featuredArticle.data.description}
+								{featuredArticle.description}
 							</p>
 
 							<div class="mt-7 flex flex-wrap gap-2 text-sm text-muted">
 								<time
-									datetime={featuredArticle.data.pubDate
+									datetime={featuredArticle.pubDate
 										.toISOString()
 										.slice(0, 10)}
 								>
 									{formatArticleDate(
-										featuredArticle.data.pubDate,
+										featuredArticle.pubDate,
 									)}
 								</time>
 
 								<span>•</span>
 
 								<span>
-									{featuredArticle.data.readingTime} menit
+									{featuredArticle.readingTime} menit
 									baca
 								</span>
 							</div>

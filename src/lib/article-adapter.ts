@@ -7,11 +7,11 @@ export interface UnifiedArticle {
   category: string;
   pubDate: Date;
   readingTime: number;
-  source: "markdown" | "directus";
+  cover?: string;
 }
 
 export function adaptDirectusArticle(
-  article: DirectusArticle
+  article: DirectusArticle,
 ): UnifiedArticle {
   const plainText = (article.content ?? "")
     .replace(/<[^>]*>/g, " ")
@@ -22,6 +22,12 @@ export function adaptDirectusArticle(
     ? plainText.split(/\s+/).length
     : 0;
 
+  const directusPublicUrl = import.meta.env.PUBLIC_DIRECTUS_URL;
+  const cover =
+    article.cover_image && directusPublicUrl
+      ? `${directusPublicUrl.replace(/\/$/, "")}/covers/${article.cover_image}.avif`
+      : undefined;
+
   return {
     id: article.slug,
     title: article.title,
@@ -31,6 +37,6 @@ export function adaptDirectusArticle(
       ? new Date(article.published_at)
       : new Date(0),
     readingTime: Math.max(1, Math.ceil(wordCount / 200)),
-    source: "directus",
+    cover,
   };
 }

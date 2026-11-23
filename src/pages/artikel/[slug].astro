@@ -1,109 +1,70 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getCollection, render } from "astro:content";
-import type { CollectionEntry } from "astro:content";
 import { getDirectusArticles } from "../../lib/directus";
 import type { DirectusArticle } from "../../lib/directus";
 import { adaptDirectusArticle } from "../../lib/article-adapter";
 import sanitizeHtml from "sanitize-html";
 
-type ArticleProps =
-  | {
-      source: "markdown";
-      article: CollectionEntry<"articles">;
-    }
-  | {
-      source: "directus";
-      article: DirectusArticle;
-    };
-
 export async function getStaticPaths() {
-  const markdownArticles = await getCollection(
-    "articles",
-    ({ data }) => !data.draft
-  );
+  const articles = await getDirectusArticles();
 
-  const directusArticles = await getDirectusArticles();
-
-  // Markdown mendapat prioritas apabila slug sama.
-  const markdownSlugs = new Set(
-    markdownArticles.map((article) => article.id)
-  );
-
-  const markdownPaths = markdownArticles.map((article) => ({
-    params: { slug: article.id },
-    props: {
-      source: "markdown" as const,
-      article,
-    },
+  return articles.map((article) => ({
+    params: { slug: article.slug },
+    props: { article },
   }));
-
-  const directusPaths = directusArticles
-    .filter((article) => !markdownSlugs.has(article.slug))
-    .map((article) => ({
-      params: { slug: article.slug },
-      props: {
-        source: "directus" as const,
-        article,
-      },
-    }));
-
-  return [...markdownPaths, ...directusPaths];
 }
 
-const props = Astro.props as ArticleProps;
-const isMarkdown = props.source === "markdown";
+const { article: directusArticle } = Astro.props as {
+  article: DirectusArticle;
+};
 
-const markdownArticle = isMarkdown ? props.article : null;
-const directusArticle = !isMarkdown ? props.article : null;
+const unified = adaptDirectusArticle(directusArticle);
 
-const unified = directusArticle
-  ? adaptDirectusArticle(directusArticle)
-  : null;
+const {
+  id,
+  title,
+  description,
+  category,
+  pubDate,
+  readingTime,
+  cover,
+} = unified;
 
-const id = markdownArticle?.id ?? unified?.id ?? "";
+const updatedDate = pubDate;
 
-const title = markdownArticle?.data.title ?? unified?.title ?? "";
-const description =
-  markdownArticle?.data.description ?? unified?.description ?? "";
+const tags: string[] = [];
 
-const category =
-  markdownArticle?.data.category ?? unified?.category ?? "Umum";
-
-const pubDate =
-  markdownArticle?.data.pubDate ?? unified?.pubDate ?? new Date(0);
-
-const updatedDate =
-  markdownArticle?.data.updatedDate ?? pubDate;
-
-const readingTime =
-  markdownArticle?.data.readingTime ?? unified?.readingTime ?? 1;
-
-const tags = markdownArticle?.data.tags ?? [];
-
-// Markdown tetap menggunakan renderer Astro.
-const rendered = markdownArticle
-  ? await render(markdownArticle)
-  : null;
-
-const Content = rendered?.Content;
-
-// HTML dari Directus dibersihkan sebelum dirender.
-const directusHtml = directusArticle
-  ? sanitizeHtml(directusArticle.content ?? "", {
-      allowedTags: [
-        ...sanitizeHtml.defaults.allowedTags,
-        "img",
-        "h1",
-        "h2",
-      ],
-      allowedAttributes: {
-        ...sanitizeHtml.defaults.allowedAttributes,
-        img: ["src", "alt", "title", "width", "height"],
-      },
-      allowedSchemes: ["http", "https", "mailto"],
-    })
-  : "";
+const directusHtml = sanitizeHtml(directusArticle.content ?? "", {
+  allowedTags: [
+    ...sanitizeHtml.defaults.allowedTags,
+    "img",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "pre",
+    "code",
+    "br",
+    "figure",
+    "figcaption",
+    "table",
+    "thead",
+    "tbody",
+    "tr",
+    "th",
+    "td",
+  ],
+  allowedAttributes: {
+    ...sanitizeHtml.defaults.allowedAttributes,
+    img: ["src", "alt", "title", "width", "height"],
+    a: ["href", "name", "target", "rel"],
+    code: ["class"],
+    pre: ["class"],
+    th: ["colspan", "rowspan"],
+    td: ["colspan", "rowspan"],
+  },
+  allowedSchemes: ["http", "https", "mailto"],
+});
 
 const date = new Intl.DateTimeFormat("id-ID", {
   day: "numeric",
@@ -140,6 +101,7 @@ const articleSchema = {
 <BaseLayout
   title={`${title} — KataKode`}
   description={description}
+  image={cover}
   type="article"
   publishedTime={pubDate.toISOString()}
   modifiedTime={updatedDate.toISOString()}
@@ -181,26 +143,31 @@ const articleSchema = {
         </div>
       </header>
 
-      <div class="article-content mt-12">
-        {
-          isMarkdown && Content
-            ? <Content />
-            : <Fragment set:html={directusHtml} />
-        }
-      </div>
+      {cover && (
+        <figure class="mt-8 overflow-hidden rounded-2xl">
+          <img
+            src={cover}
+            alt={`Sampul artikel: ${title}`}
+            class="aspect-[16/9] w-full object-cover"
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+          />
+        </figure>
+      )}
+
+      <div class="article-content mt-12" set:html={directusHtml}></div>
 
       <footer class="mt-16 border-t border-border pt-8">
-        {
-          tags.length > 0 && (
-            <div class="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <span class="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )
-        }
+        {tags.length > 0 && (
+          <div class="flex flex-wrap gap-2">
+            {tags.map((tag) => (
+              <span class="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         <a
           href="/artikel/"

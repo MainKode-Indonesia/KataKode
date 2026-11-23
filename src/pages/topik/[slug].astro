@@ -3,7 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import ArticleCard from "../../components/ui/ArticleCard.astro";
 
 import { getAllTopics, isArticleInTopic } from "../../lib/topics";
-import type { Topic } from "../../data/topics";
+import type { Topic } from "../../lib/topics";
 import { getAllPublishedArticles } from "../../lib/articles";
 
 type Articles = Awaited<ReturnType<typeof getAllPublishedArticles>>;

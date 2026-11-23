@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+PROJECT_DIR="/home/naufal/blog.nafeka.my.id"
+DIRECTUS_DIR="/home/naufal/admin.nafeka.my.id"
+UPLOADS_DIR="$DIRECTUS_DIR/uploads"
+PUBLIC_DIR="/var/www/katakode-covers"
+
+cd "$PROJECT_DIR"
+
+set -a
+source "$PROJECT_DIR/.env"
+set +a
+
+: "${DIRECTUS_URL:?DIRECTUS_URL belum diatur}"
+: "${DIRECTUS_TOKEN:?DIRECTUS_TOKEN belum diatur}"
+
+RESPONSE="$(
+  curl -fsS --max-time 20 \
+    -H "Authorization: Bearer $DIRECTUS_TOKEN" \
+    --get \
+    --data-urlencode 'filter[status][_eq]=published' \
+    --data-urlencode 'fields=slug,cover_image' \
+    --data-urlencode 'limit=-1' \
+    "$DIRECTUS_URL/items/KataKode_Articles"
+)"
+
+mkdir -p "$PUBLIC_DIR"
+
+printf '%s' "$RESPONSE" | node -e '
+let input = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", chunk => input += chunk);
+process.stdin.on("end", () => {
+  const result = JSON.parse(input);
+  if (!Array.isArray(result.data)) {
+    console.error("Respons Directus tidak valid.");
+    process.exit(1);
+  }
+
+  const seen = new Set();
+  for (const article of result.data) {
+    const id = article.cover_image;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    console.log(`${article.slug}\t${id}`);
+  }
+  console.error(`Artikel terbit: ${result.data.length}; cover unik: ${seen.size}`);
+});
+' | while IFS=$'\t' read -r slug uuid; do
+  [[ -n "$uuid" ]] || continue
+
+  destination="$PUBLIC_DIR/$uuid.avif"
+
+  if [[ -f "$destination" ]]; then
+    echo "Lewati: $slug — cover publik sudah ada."
+    continue
+  fi
+
+  source_file=""
+
+  if [[ -f "$UPLOADS_DIR/$uuid.avif" ]]; then
+    source_file="$UPLOADS_DIR/$uuid.avif"
+  else
+    matches=( "$UPLOADS_DIR/${uuid}__"*.avif )
+    if [[ -f "${matches[0]:-}" ]]; then
+      source_file="${matches[0]}"
+    fi
+  fi
+
+  if [[ -z "$source_file" ]]; then
+    echo "ERROR: $slug — sumber AVIF tidak ditemukan." >&2
+    echo "Sinkronisasi dibatalkan agar deployment tidak menghasilkan cover rusak." >&2
+    exit 1
+  fi
+
+  install -o naufal -g www-data -m 640 -- "$source_file" "$destination"
+  echo "Tersinkron: $slug -> $destination"
+done
+
+echo "Sinkronisasi selesai."

@@ -1,55 +1,40 @@
-import { topics } from "../data/topics";
-import type { Topic } from "../data/topics";
 import { getDirectusCategories } from "./directus";
 
+export interface Topic {
+  name: string;
+  slug: string;
+  description: string;
+  icon: string;
+}
+
 export async function getAllTopics(): Promise<Topic[]> {
-  const directusCategories = await getDirectusCategories();
+  const categories = await getDirectusCategories();
 
-  // Topik bawaan KataKode tetap menjadi sumber utama.
-  const mergedTopics = new Map<string, Topic>();
-
-  for (const topic of topics) {
-    mergedTopics.set(topic.slug.toLowerCase(), topic);
-  }
-
-  // Tambahkan kategori dari Directus.
-  for (const category of directusCategories) {
-    const slug = category.slug?.trim().toLowerCase();
-
-    if (!slug || mergedTopics.has(slug)) {
-      continue;
-    }
-
-    mergedTopics.set(slug, {
+  return categories
+    .filter((category) => category.slug?.trim())
+    .map((category) => ({
       name: category.name,
-      slug,
+      slug: category.slug.trim().toLowerCase(),
       description:
         category.description ||
         `Jelajahi artikel, tutorial, dan pembahasan seputar ${category.name}.`,
       icon: "◇",
-    });
-  }
-
-  return [...mergedTopics.values()];
+    }));
 }
 
-export function getArticleCategory(
-  article: {
-    data?: { category: string };
-    category?: string;
+export function getArticleCategory(article: {
+  category?: string | { name?: string } | null;
+}): string {
+  if (typeof article.category === "string") {
+    return article.category;
   }
-): string {
-  return "data" in article
-    ? article.data?.category ?? "Umum"
-    : article.category ?? "Umum";
+
+  return article.category?.name ?? "Umum";
 }
 
 export function isArticleInTopic(
-  article: {
-    data?: { category: string };
-    category?: string;
-  },
-  topic: Topic
+  article: { category?: string | { name?: string } | null },
+  topic: Topic,
 ): boolean {
   return (
     getArticleCategory(article).trim().toLowerCase() ===
