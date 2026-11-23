@@ -1,0 +1,84 @@
+---
+interface Props {
+  targetSelector?: string;
+}
+
+const { targetSelector = "article" } = Astro.props;
+---
+
+<div
+  id="reading-progress-container"
+  role="progressbar"
+  aria-label="Progres membaca artikel"
+  aria-valuemin="0"
+  aria-valuemax="100"
+  aria-valuenow="0"
+  data-target={targetSelector}
+  class="pointer-events-none fixed left-0 right-0 top-0 z-[60] h-[3px] w-full bg-primary/10"
+>
+  <div
+    id="reading-progress-bar"
+    class="h-full w-full origin-left scale-x-0 bg-primary will-change-transform"
+  ></div>
+</div>
+
+<script>
+  const container = document.getElementById("reading-progress-container");
+  const bar = document.getElementById("reading-progress-bar");
+
+  if (container && bar) {
+    const targetSelector = container.dataset.target || "article";
+    let ticking = false;
+
+    const calculateProgress = () => {
+      const target = document.querySelector(targetSelector);
+      const docScrollable =
+        document.documentElement.scrollHeight - window.innerHeight;
+
+      let scrollableDistance = docScrollable;
+
+      if (target) {
+        const rect = target.getBoundingClientRect();
+        const articleBottom = window.scrollY + rect.bottom;
+        const articleScrollable = articleBottom - window.innerHeight;
+
+        if (articleScrollable > 0) {
+          scrollableDistance =
+            docScrollable > 0
+              ? Math.min(articleScrollable, docScrollable)
+              : articleScrollable;
+        }
+      }
+
+      if (scrollableDistance <= 0) {
+        return 0;
+      }
+
+      const ratio = Math.min(
+        1,
+        Math.max(0, window.scrollY / scrollableDistance)
+      );
+      return ratio;
+    };
+
+    const updateProgress = () => {
+      const ratio = calculateProgress();
+      const percentage = Math.round(ratio * 100);
+
+      bar.style.transform = `scaleX(${ratio})`;
+      container.setAttribute("aria-valuenow", String(percentage));
+      ticking = false;
+    };
+
+    const onScrollOrResize = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateProgress);
+        ticking = true;
+      }
+    };
+
+    updateProgress();
+    window.addEventListener("scroll", onScrollOrResize, { passive: true });
+    window.addEventListener("resize", onScrollOrResize, { passive: true });
+  }
+</script>

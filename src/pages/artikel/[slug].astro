@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import ReadingProgress from "../../components/ui/ReadingProgress.astro";
 import { getCollection, render } from "astro:content";
 import type { CollectionEntry } from "astro:content";
 import { getDirectusArticles } from "../../lib/directus";
@@ -148,6 +149,8 @@ const articleSchema = {
     type="application/ld+json"
     set:html={JSON.stringify(articleSchema).replace(/</g, "\\u003c")}
   />
+
+  <ReadingProgress targetSelector="main article" />
 
   <main class="container-site py-16 md:py-24">
     <article class="mx-auto max-w-3xl">

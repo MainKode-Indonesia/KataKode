@@ -79,6 +79,22 @@ const ogImage = new URL(image, Astro.site ?? Astro.url);
         />
 
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+        <script is:inline>
+            (() => {
+                try {
+                    const stored = localStorage.getItem("theme");
+                    const prefersDark = window.matchMedia(
+                        "(prefers-color-scheme: dark)"
+                    ).matches;
+                    const isDark =
+                        stored === "dark" || (!stored && prefersDark);
+                    document.documentElement.classList.toggle("dark", isDark);
+                } catch {
+                    // Ignore storage access errors
+                }
+            })();
+        </script>
     </head>
 
     <body class="flex min-h-screen flex-col">

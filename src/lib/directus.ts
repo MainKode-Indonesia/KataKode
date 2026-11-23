@@ -27,33 +27,44 @@ interface DirectusResponse<T> {
 }
 
 async function directusFetch<T>(
-  endpoint: string
+  endpoint: string,
+  fallback: T
 ): Promise<T> {
   if (!DIRECTUS_URL || !DIRECTUS_TOKEN) {
-    throw new Error(
-      "DIRECTUS_URL atau DIRECTUS_TOKEN belum dikonfigurasi."
+    console.warn(
+      "[AI Studio] DIRECTUS_URL or DIRECTUS_TOKEN not configured — using local content only."
     );
+    return fallback;
   }
 
-  const response = await fetch(
-    `${DIRECTUS_URL}${endpoint}`,
-    {
-      headers: {
-        Authorization: `Bearer ${DIRECTUS_TOKEN}`,
-      },
+  try {
+    const response = await fetch(
+      `${DIRECTUS_URL}${endpoint}`,
+      {
+        headers: {
+          Authorization: `Bearer ${DIRECTUS_TOKEN}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.warn(
+        `[AI Studio] Directus API error: HTTP ${response.status} — using fallback.`
+      );
+      return fallback;
     }
-  );
 
-  if (!response.ok) {
-    throw new Error(
-      `Directus API error: HTTP ${response.status}`
+    const result =
+      (await response.json()) as DirectusResponse<T>;
+
+    return result.data;
+  } catch (error) {
+    console.warn(
+      "[AI Studio] Directus API unreachable — using fallback.",
+      error
     );
+    return fallback;
   }
-
-  const result =
-    (await response.json()) as DirectusResponse<T>;
-
-  return result.data;
 }
 
 // Mengambil artikel yang sudah diterbitkan
@@ -66,13 +77,15 @@ export async function getDirectusArticles() {
   params.set("limit", "-1");
 
   return directusFetch<DirectusArticle[]>(
-    `/items/KataKode_Articles?${params.toString()}`
+    `/items/KataKode_Articles?${params.toString()}`,
+    []
   );
 }
 
 // Mengambil daftar kategori
 export async function getDirectusCategories() {
   return directusFetch<DirectusCategory[]>(
-    "/items/KataKode_Categories?fields=id,name,slug,description"
+    "/items/KataKode_Categories?fields=id,name,slug,description",
+    []
   );
 }
